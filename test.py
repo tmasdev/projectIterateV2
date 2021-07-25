@@ -1,5 +1,6 @@
 import nbt
 import requests
+import mysql.connector
 #Python
 import gzip
 import json
@@ -8,6 +9,12 @@ import base64
 import io
 import os
 import numpy
+mydb = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="CURSE OF BINDING",
+  database="skyblockUsers"
+)
 def decode_data(compressed):
   # b = time.time()
   iobite = io.BytesIO(base64.b64decode(compressed))
@@ -93,10 +100,15 @@ def nbtToJson(data):
     newData= tagValueToJson(data)
   return(newData)
 
-data = requests.get("https://api.hypixel.net/skyblock/profiles?uuid=1a7afa96c270429ea63c7eb3db928834&key=d16dc479-a24f-4c10-98b1-77b14d7fccfa").json()
-data = decode_data(data['profiles'][1]['members']['1a7afa96c270429ea63c7eb3db928834']['inv_contents']['data'])['i']
-newList = []
-for i in range(len(data)):
-  newList.append(nbtToJson(data[i]))
-print(encodeJsonData(newList))
-print(decodeJsonData(encodeJsonData(newList)))
+# data = requests.get("https://api.hypixel.net/skyblock/profiles?uuid=1a7afa96c270429ea63c7eb3db928834&key=d16dc479-a24f-4c10-98b1-77b14d7fccfa").json()
+# data = decode_data(data['profiles'][1]['members']['1a7afa96c270429ea63c7eb3db928834']['inv_contents']['data'])['i']
+# newList = []
+# for i in range(len(data)):
+#   newList.append(nbtToJson(data[i]))
+# print(encodeJsonData(newList))
+# print(decodeJsonData(encodeJsonData(newList)))
+i = 10000
+mycursor = mydb.cursor()
+mycursor.execute("SELECT player_id FROM names WHERE `id` = %i" % (i))
+uuid = mycursor.fetchall()
+print(str(uuid))

@@ -260,60 +260,47 @@ def scanToDb():
   global mydb
   adds = 0
   errors = []
-  startDigit = str(input("Enter start digit (x.json): "))
   startName = str(input("Enter start name index: "))
-  nameFileList = ["0.json","1.json","2.json","3.json","4.json","5.json","6.json","7.json","8.json","9.json","a.json","b.json","c.json","d.json","e.json","f.json"]
-  totalNames = 0
-  for i in range(len(nameFileList)):
-    totalNames += len(readJson("names/" + nameFileList[i]))
-  if startDigit == "0.json":
-    j = 0
-  else:
-    if nameFileList.index(startDigit) != -1:
-        j = nameFileList.index(startDigit)
-    else:
-        print("error: Starting point does not exist!")
   i = int(startName)
   getConfig()
   totalTime = 0
   totalCompletedNames = 0
   totalTimePredict = 0
+  mycursor = mydb.cursor()
+  sql_command = "SELECT COUNT(*) FROM names"
+  mycursor.execute(sql_command)
+  totalNames = mycursor.fetchall()
   print("Starting processing/scanning of " + str(totalNames) + " names")
   # Start
-  while j in range(len(nameFileList)):
-    nameFile = readJson("names/" + nameFileList[j])
-    numberOfNames = len(nameFile)
-    print(numberOfNames)
-    print(j)
-    while i in range(numberOfNames):
-      startTimePredict = time.time()
-      startTime = time.time()
-      uuid = nameFile[i].replace("-","")
-      addUser(uuid)
-      endTime = time.time()
-      # api cooldown
-      totalTime += endTime-startTime
-      excessWaitTime = config["apiCooldown"]-(endTime-startTime)
-      if excessWaitTime > 0:
-        waitTime = excessWaitTime
-        time.sleep(waitTime)
-      totalCompletedNames += 1
-      endTimePredict = time.time()
-      totalTimePredict += endTimePredict-startTimePredict
-      if i%2500 == 0:
-        print("Average time " + str(round(totalTime/totalCompletedNames,3)))
-        print("Actual average time " + str(round(totalTimePredict/totalCompletedNames, 3)))
-        print(str(adds) + " new names/rows in code")
-        mycursor = mydb.cursor()
-        mycursor.execute("SELECT COUNT(*) FROM sbData0821")
-        result = mycursor.fetchall()
-        print(str(result) + " names/rows in db")
-        print(str(len(errors)) + " errors")
-        print("file " + str(j) + ", name " + str(i) + "\n")
-        writeJson("errors.json", errors)
-      i += 1
-    i = 0
-    j+=1
+  numberOfNames = len(totalNames)
+  while i in range(numberOfNames):
+    startTimePredict = time.time()
+    startTime = time.time()
+    mycursor.execute("SELECT player_id FROM names WHERE `id` = %i" % (i))
+    uuid = mycursor.fetchall()
+    addUser(uuid)
+    endTime = time.time()
+    # api cooldown
+    totalTime += endTime-startTime
+    excessWaitTime = config["apiCooldown"]-(endTime-startTime)
+    if excessWaitTime > 0:
+      waitTime = excessWaitTime
+      time.sleep(waitTime)
+    totalCompletedNames += 1
+    endTimePredict = time.time()
+    totalTimePredict += endTimePredict-startTimePredict
+    if i%2500 == 0:
+      print("Average time " + str(round(totalTime/totalCompletedNames,3)))
+      print("Actual average time " + str(round(totalTimePredict/totalCompletedNames, 3)))
+      print(str(adds) + " new names/rows in code")
+      mycursor = mydb.cursor()
+      mycursor.execute("SELECT COUNT(*) FROM sbData0821")
+      result = mycursor.fetchall()
+      print(str(result) + " names/rows in db")
+      print(str(len(errors)) + " errors")
+      print("Name " + str(i) + " (" + uuid + ").\n")
+      writeJson("errors.json", errors)
+    i += 1
 question = int(input("Add to/wipe db? 1/2: "))
 if question == 1:
   scanToDb()
@@ -339,5 +326,3 @@ else:
 # uuid = "1a7afa96c270429ea63c7eb3db928834".replace("-","")
 # addUser(mydb, uuid)
 # wipeTable(mydb)
-
-#HYPIXEL API DOWN currently at 4.json 42500
