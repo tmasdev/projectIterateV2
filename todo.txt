@@ -1,25 +1,6 @@
-instagram mass facial recognition:
--
+vary interval between printing user number in config: ("5000 in example -> "if userNumber%5000 == 0")
 
+Create number recognition neural network+trainer in python (mostly pure)
+learn what a weighted sum is
 
-
-add/test item searching for:
--dungeon splash potions
--invalid/cursed pet rarities
--og minions
--maddoxPhoneNumber
--unknownPet
--energyCrystal
--minecartWithTnt (misnamed)
--minecartWithFurnace (misnamed)
-
-preemptivly add/test pet menu searching for:
--invalid pet rarities
--lvl0 pet
-
-transfer from names/x.json to a purely names db-table (with names/x.json backup)
-
-remove duplicates from updated names and merge it with all names (removing duplicates again after the merge)
-
-backup db and back up code
-create web software for a family tree style data explorer with username connections
+How biological neurons learn(i think): hebbian thoery

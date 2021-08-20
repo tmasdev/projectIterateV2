@@ -1,4 +1,5 @@
 from codecs import xmlcharrefreplace_errors
+from re import X
 import mysql.connector
 import nbt
 from random import randint
@@ -9,8 +10,6 @@ import gzip
 import base64
 import io
 import os
-import numpy
-from numpy.core import numeric
 def decode_data(compressed):
     # b = time.time()
     iobite = io.BytesIO(base64.b64decode(compressed))
@@ -114,32 +113,42 @@ def filterSlot(slotData,location):
                 itemName = slotData['tag']['display']['Name']
             else:
                 itemName = None
-            #itemLore
-            if 'Lore' in slotData['tag']['display']:
-                itemLore = slotData['tag']['display']['Lore']
-            else:
-                itemLore = None
+            # # off:
+            # #itemLore
+            # if 'Lore' in slotData['tag']['display']:
+            #     itemLore = slotData['tag']['display']['Lore']
+            # else:
+            #     itemLore = None
         else:
-            itemLore = None
+            # # off:
+            # itemLore = None
             itemName = None
     else:
         skyblockId = None
-        itemLore = None
+        # # off:
+        # itemLore = None
         itemName = None
-    numericId = str(slotData['id'])
-    #leatherColor:
-    #leatherColorHex:
-    if numericId in ["298","299","300","301"] and 'tag' in slotData and 'display' in slotData['tag'] and 'color' in slotData['tag']['display']:
-        leatherColor = str(slotData['tag']['display']['color'])
-        leatherColorHex = str(hex(int(leatherColor)))[2:]
-    else:
-        leatherColor = None
-        leatherColorHex = None
-    #itemSlotCount:
-    if 'count' in slotData:
-        itemSlotCount = slotData['count']
-    else:
-        itemSlotCount = None
+    # # off:
+    # # numericId
+    # numericId = str(slotData['id'])
+
+    # # off:
+    # #leatherColor:
+    # #leatherColorHex:
+    # if numericId in ["298","299","300","301"] and 'tag' in slotData and 'display' in slotData['tag'] and 'color' in slotData['tag']['display']:
+    #     leatherColor = str(slotData['tag']['display']['color'])
+    #     leatherColorHex = str(hex(int(leatherColor)))[2:]
+    # else:
+    #     leatherColor = None
+    #     leatherColorHex = None
+
+    # # off:
+    # #itemSlotCount:
+    # if 'count' in slotData:
+    #     itemSlotCount = slotData['count']
+    # else:
+    #     itemSlotCount = None
+
     #Variables:(All str unless otherwise specified)
     #profileId :The profile's id
     #playerId :The player's uuid
@@ -155,20 +164,51 @@ def filterSlot(slotData,location):
         #Dungeon Splash
         if "Dungeon" in itemName and "Splash Potion" in itemName:
             mycursor = mydb.cursor()
-            sql_command = "INSERT INTO foundItems0621(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), skyblockId, itemName,location)
+            sql_command = "INSERT INTO foundItems0821(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), skyblockId, itemName,location)
             mycursor.execute(sql_command)
             mydb.commit()
     elif skyblockId == "PET":
-        if itemLore != None and ("COMMON" in itemLore[-1] or "UNCOMMON" in itemLore[-1] or "RARE" in itemLore[-1]):
-            # if slotData
-            print(slotData)
-            # mycursor = mydb.cursor()
-            # sql_command = "INSERT INTO foundItems0621(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), skyblockId, itemName,location)
-            # mycursor.execute(sql_command)
-            # mydb.commit()
-            
+        if 'tag' in slotData:
+            if 'ExtraAttributes' in slotData['tag']:
+                if 'petInfo' in slotData['tag']['ExtraAttributes']:
+                    petInfo = json.loads(slotData['tag']['ExtraAttributes']['petInfo'])
+                    filterPetSlot(petInfo, location)
+                else:
+                    print("\'petInfo\' not in \'ExtraAttributes\'... hmm.")
+                    if 'originTag' in slotData['tag']['ExtraAttributes']:
+                        if slotData['tag']['ExtraAttributes']['originTag'] == 'UNKNOWN':
+                            print("Unknown pet : " + str(playerid) + " : " + str(location))
+                            mycursor = mydb.cursor()
+                            sql_command = "INSERT INTO foundItems0821(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), "PET", "unknown_pet",location)
+                            mycursor.execute(sql_command)
+                            mydb.commit()
+                        else:
+                            print("Not \'originTag\' == \'UNKNOWN\' ")
+                            print(str(playerid) + " : " + str(location) + " : " + str(slotData) + "\n")
+                    else:
+                        print("No origin tag.")
+                        print(str(playerid) + " : " + str(location) + " : " + str(slotData) + "\n")
+            else:
+                print("\'ExtraAttributes\' not in \'ExtraAttributes\'... hmm.")
+                print(str(playerid) + " : " + str(location) + " : " + str(slotData) + "\n")
+        else:
+            print("\'tag\' not in pet data... hmm.")
+            print(str(playerid) + " : " + str(location) + " : " + str(slotData) + "\n")
+
 def filterArmorSlot(slotData,location):
     pass
+
+def filterPetSlot(slotData,location):
+    global mydb
+    global config
+    global playerid
+    global profileId
+    if slotData['tier'] in ['COMMON','UNCOMMON','RARE'] and slotData['type'] in ['SKELETON_HORSE', 'BLAZE', 'PIGMAN', 'SNOWMAN', 'WITHER_SKELETON']:
+        print("Found Cursed Pet : " + str(playerid) + " : " + str(location) + " : " + str(slotData) + "\n")
+        mycursor = mydb.cursor()
+        sql_command = "INSERT INTO foundItems0821(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), "PET", "cursed_" + str(slotData['type']),location)
+        mycursor.execute(sql_command)
+        mydb.commit()
 
 def exoticSearchSlot(slotData,location):
     global mydb
@@ -182,7 +222,7 @@ def exoticSearchSlot(slotData,location):
             if int(str(slotData['tag']['display']['color'])) != exoticCodesTable["Helmet"][str(slotData['tag']['ExtraAttributes']['id'])]:
                 if int(str(slotData['tag']['display']['color'])) not in nonExoticCodes:
                     mycursor = mydb.cursor()
-                    sql_command = "INSERT INTO  exoticProfiles0621(profile_id, player_id, item_id, item_color, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), playerid, str(slotData['tag']['ExtraAttributes']['id']),str(slotData['tag']['display']['color']),location)
+                    sql_command = "INSERT INTO  exoticProfiles0821(profile_id, player_id, item_id, item_color, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), playerid, str(slotData['tag']['ExtraAttributes']['id']),str(slotData['tag']['display']['color']),location)
                     mycursor.execute(sql_command)
                     mydb.commit()
                     # print(sql_command)
@@ -191,7 +231,7 @@ def exoticSearchSlot(slotData,location):
             if int(str(slotData['tag']['display']['color'])) != exoticCodesTable["Chestplate"][str(slotData['tag']['ExtraAttributes']['id'])]:
                 if int(str(slotData['tag']['display']['color'])) not in nonExoticCodes:
                     mycursor = mydb.cursor()
-                    sql_command = "INSERT INTO exoticProfiles0621(profile_id, player_id, item_id, item_color, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), playerid, str(slotData['tag']['ExtraAttributes']['id']),str(slotData['tag']['display']['color']),location)
+                    sql_command = "INSERT INTO exoticProfiles0821(profile_id, player_id, item_id, item_color, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), playerid, str(slotData['tag']['ExtraAttributes']['id']),str(slotData['tag']['display']['color']),location)
                     mycursor.execute(sql_command)
                     mydb.commit()
                     # print(sql_command)
@@ -200,7 +240,7 @@ def exoticSearchSlot(slotData,location):
             if int(str(slotData['tag']['display']['color'])) != exoticCodesTable["Leggings"][str(slotData['tag']['ExtraAttributes']['id'])]:
                 if int(str(slotData['tag']['display']['color'])) not in nonExoticCodes:
                     mycursor = mydb.cursor()
-                    sql_command = "INSERT INTO exoticProfiles0621(profile_id, player_id, item_id, item_color, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), playerid, str(slotData['tag']['ExtraAttributes']['id']),str(slotData['tag']['display']['color']),location)
+                    sql_command = "INSERT INTO exoticProfiles0821(profile_id, player_id, item_id, item_color, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), playerid, str(slotData['tag']['ExtraAttributes']['id']),str(slotData['tag']['display']['color']),location)
                     mycursor.execute(sql_command)
                     mydb.commit()
                     # print(sql_command)
@@ -209,7 +249,7 @@ def exoticSearchSlot(slotData,location):
             if int(str(slotData['tag']['display']['color'])) != exoticCodesTable["Boots"][str(slotData['tag']['ExtraAttributes']['id'])]:
                 if int(str(slotData['tag']['display']['color'])) not in nonExoticCodes:
                     mycursor = mydb.cursor()
-                    sql_command = "INSERT INTO exoticProfiles0621(profile_id, player_id, item_id, item_color, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), playerid, str(slotData['tag']['ExtraAttributes']['id']),str(slotData['tag']['display']['color']),location)
+                    sql_command = "INSERT INTO exoticProfiles0821(profile_id, player_id, item_id, item_color, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), playerid, str(slotData['tag']['ExtraAttributes']['id']),str(slotData['tag']['display']['color']),location)
                     mycursor.execute(sql_command)
                     mydb.commit()
                     # print(sql_command)
@@ -223,51 +263,53 @@ def searchUser(userData):
     playerid = userData[2]
     profileId = userData[1]
     #inv_armor
+    location = "inv_armor"
     if userData[7] != 'None':
         inv_armor = decodeJsonData(userData[7])[0]
         for slot in range(len(inv_armor)):
             if inv_armor[slot] != {}:
-                location = "inv_armor"
-                # filterArmorSlot(inv_armor[slot],location)
+                filterArmorSlot(inv_armor[slot],location)
                 if exoticSearch:
                     exoticSearchSlot(inv_armor[slot],location)
     #ender_chest_contents
+    location = "ender_chest_contents"
     if userData[8] != 'None':
         ender_chest_contents = decodeJsonData(userData[8])[0]
         for slot in range(len(ender_chest_contents)):
             if ender_chest_contents[slot] != {}:
-                location = "ender_chest_contents"
-                # filterSlot(ender_chest_contents[slot],location
+                filterSlot(ender_chest_contents[slot],location)
                 if exoticSearch:
                     exoticSearchSlot(ender_chest_contents[slot],location)
     #wardrobe_contents
+    location = "wardrobe_contents"
     if userData[9] != 'None':
         wardrobe_contents = decodeJsonData(userData[9])[0]
         for slot in range(len(wardrobe_contents)):
             if wardrobe_contents[slot] != {}:
-                location = "wardrobe_contents"
-                # filterArmorSlot(wardrobe_contents[slot],location)
+                filterArmorSlot(wardrobe_contents[slot],location)
                 if exoticSearch:
                     exoticSearchSlot(wardrobe_contents[slot],location)
     #personal_vault_contents
+    location = "personal_vault_contents"
     if userData[10] != 'None':
         personal_vault_contents = decodeJsonData(userData[10])[0]
         for slot in range(len(personal_vault_contents)):
             if personal_vault_contents[slot] != {}:
                 location = "personal_vault_contents"
-                # filterSlot(personal_vault_contents[slot],location)
+                filterSlot(personal_vault_contents[slot],location)
                 if exoticSearch:
                     exoticSearchSlot(personal_vault_contents[slot],location)       
     #inv_contents
+    location = "inv_contents"
     if userData[11] != 'None':
         inv_contents = decodeJsonData(userData[11])[0]
         for slot in range(len(inv_contents)):
             if inv_contents[slot] != {}:
-                location = "inv_contents"
-                # filterSlot(inv_contents[slot],location)
+                filterSlot(inv_contents[slot],location)
                 if exoticSearch:
                     exoticSearchSlot(inv_contents[slot],location)
     #backpacks
+    location = "backpacks"
     if userData[12] != 'None':
         backpacks = decodeJsonData(userData[12])
         for bp in range(len(backpacks)):
@@ -276,21 +318,28 @@ def searchUser(userData):
             for slot in range(len(backpack)):
                 # print(backpack[j])
                 if backpack[slot] != {}:
-                    location = "backpacks"
-                    # filterSlot(backpack[slot],location)
+                    filterSlot(backpack[slot],location)
                     if exoticSearch:
                         exoticSearchSlot(backpack[slot],location)
             # print(backpack)
             # backpacks[i]
+    #pets_contents
+    location = "pets_contents"
+    if userData[16] != 'None':
+        pets_contents = decodeJsonData(userData[16])
+        # print(len(pets_contents))
+        for pet in range(len(pets_contents)):
+            filterPetSlot(pets_contents[pet], location)
 def remakeTable(mycursor):
-    mycursor.execute("DROP TABLE exoticProfiles0621")
-    mycursor.execute("DROP TABLE updatedNames0621")
-    mycursor.execute("DROP TABLE foundItems0621")
-    mycursor.execute("CREATE TABLE exoticProfiles0621(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL,item_id VARCHAR(64),item_color VARCHAR(8), item_location VARCHAR(64))")
-    mycursor.execute("CREATE TABLE updatedNames0621(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, player_id VARCHAR(36) NOT NULL)")
-    mycursor.execute("CREATE TABLE foundItems0621(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL,item_id VARCHAR(64),item VARCHAR(8), item_location VARCHAR(64))")
+    pass
+    mycursor.execute("DROP TABLE exoticProfiles0821")
+    mycursor.execute("DROP TABLE foundItems0821")
+    # # Dungeon
+    # mycursor.execute("DROP TABLE updatedNames0821")
+    # mycursor.execute("CREATE TABLE updatedNames0821(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, player_id VARCHAR(36) NOT NULL)")
+    mycursor.execute("CREATE TABLE exoticProfiles0821(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL,item_id VARCHAR(64),item_color VARCHAR(8), item_location VARCHAR(64))")
+    mycursor.execute("CREATE TABLE foundItems0821(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL,item_id VARCHAR(64),item VARCHAR(256), item_location VARCHAR(64))")
     
-
 def searchDb(index):
     global exoticSearch
     global exoticCodesTable
@@ -309,15 +358,17 @@ def searchDb(index):
     getConfig()
     exoticSearch = config["exoticSearch"]
     mydb = mysql.connector.connect(
-        host="localhost",
+        host="192.168.1.104",
+        port="3306",
         user="root",
         password="CURSE OF BINDING",
         database="skyblockUsers"
     )
+    print("connected")
     mycursor = mydb.cursor()
     remakeTable(mycursor)
-    mycursor.execute("SELECT MAX(`id`) FROM sbData0621")
-    userCount = int(mycursor.fetchall()[0][0]) + 200000
+    mycursor.execute("SELECT MAX(`id`) FROM sbData0821")
+    userCount = int(mycursor.fetchall()[0][0])
     # userCount = 1300000
     print(userCount)
     totalDbTime = 0
@@ -330,22 +381,23 @@ def searchDb(index):
     timesOfTotalNewNamesTime = 0
     while userNumber in range(userCount):
         a = time.time()
-        mycursor.execute("SELECT * FROM sbData0621 WHERE `id` = %i" % (userNumber))
+        mycursor.execute("SELECT * FROM sbData0821 WHERE `id` = %i" % (userNumber))
         userData = mycursor.fetchall()
         b = time.time()
         totalDbTime += b-a
         dbTimes += 1
         if len(userData) == 1:
             c = time.time()
-            if userData[0][4] != "":
-                #updated names dungeon teammates
-                dungeonTeammates = "\'" + str(userData[0][4]).replace("-","").replace(",", "\'),(\'") + "\'"
-                sql_command = "INSERT INTO updatedNames0621(player_id) VALUES(%s);" % (dungeonTeammates)
-                mycursor.execute(sql_command)
-                mydb.commit()
-                bq = time.time()
-                totalNewNamesTime += bq-c
-                timesOfTotalNewNamesTime +=1
+            # # Dungeon searcher:
+            # if userData[0][4] != "":
+            #     #updated names dungeon teammates
+            #     dungeonTeammates = "\'" + str(userData[0][4]).replace("-","").replace(",", "\'),(\'") + "\'"
+            #     sql_command = "INSERT INTO updatedNames0821(player_id) VALUES(%s);" % (dungeonTeammates)
+            #     mycursor.execute(sql_command)
+            #     mydb.commit()
+            #     bq = time.time()
+            #     totalNewNamesTime += bq-c
+            #     timesOfTotalNewNamesTime +=1
             searchUser(userData[0])
             d = time.time()
             totalProcessingTime += d-c
@@ -355,13 +407,15 @@ def searchDb(index):
         e = time.time()
         totalTime += e-a
         if userNumber%5000 == 0 and userNumber != 0:
-            mycursor.execute("SELECT COUNT(*) FROM updatedNames0621")
-            newTeammateCount = mycursor.fetchall()[0]
-            print(str(userNumber) + ". total average: " + str(round(totalTime/userNumber, 5)) + ". processing: " + str(round(totalProcessingTime/times, 5)) + ". dbtime: " + str(round(totalDbTime/userNumber, 5)) + ". new names" + str(newTeammateCount) + ". new names time" + str(round(totalNewNamesTime/timesOfTotalNewNamesTime, 5)))
-            # print(str(userNumber) + ". total average: " + str(round(totalTime/userNumber, 5)) + ". processing: " + str(round(totalProcessingTime/times, 5)) + ". dbtime: " + str(round(totalDbTime/userNumber, 5)) + ". ")
+            # # Dungeon searcher:
+            # mycursor.execute("SELECT COUNT(*) FROM updatedNames0821")
+            # newTeammateCount = mycursor.fetchall()[0]
+            # print(str(userNumber) + ". total average: " + str(round(totalTime/userNumber, 5)) + ". processing: " + str(round(totalProcessingTime/times, 5)) + ". dbtime: " + str(round(totalDbTime/userNumber, 5)) + ". new names" + str(newTeammateCount) + ". new names time" + str(round(totalNewNamesTime/timesOfTotalNewNamesTime, 5)))
+            print(str(userNumber) + ". total average: " + str(round(totalTime/userNumber, 5)) + ". processing: " + str(round(totalProcessingTime/times, 5)) + ". dbtime: " + str(round(totalDbTime/userNumber, 5)) + ". ")
         userNumber +=1
     print(str(userNumber) + ". total " + str())
     print("Done.")
 
 print("Start")
 searchDb(0)
+# Last updated Fri 20 Aug 04:52

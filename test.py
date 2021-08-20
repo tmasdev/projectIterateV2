@@ -9,12 +9,6 @@ import base64
 import io
 import os
 import numpy
-mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  password="CURSE OF BINDING",
-  database="skyblockUsers"
-)
 def decode_data(compressed):
   # b = time.time()
   iobite = io.BytesIO(base64.b64decode(compressed))
@@ -99,16 +93,34 @@ def nbtToJson(data):
   else:
     newData= tagValueToJson(data)
   return(newData)
+def listOfNbtToJson(data):
+  newList = []
+  for i in range(len(data)):
+    newList.append(nbtToJson(data[i]))
+  return(newList)
+print("start")
+# mydb = mysql.connector.connect(
+#   host="192.168.1.104",
+#   port="3306",
+#   user="root",
+#   password="CURSE OF BINDING",
+#   database="skyblockUsers"
+# )
 
-# data = requests.get("https://api.hypixel.net/skyblock/profiles?uuid=1a7afa96c270429ea63c7eb3db928834&key=d16dc479-a24f-4c10-98b1-77b14d7fccfa").json()
-# data = decode_data(data['profiles'][1]['members']['1a7afa96c270429ea63c7eb3db928834']['inv_contents']['data'])['i']
-# newList = []
-# for i in range(len(data)):
-#   newList.append(nbtToJson(data[i]))
-# print(encodeJsonData(newList))
-# print(decodeJsonData(encodeJsonData(newList)))
-i = 10000
-mycursor = mydb.cursor()
-mycursor.execute("SELECT player_id FROM names WHERE `id` = %i" % (i))
-uuid = mycursor.fetchall()
-print(str(uuid))
+profiles = requests.get("https://api.hypixel.net/skyblock/profiles?key=d16dc479-a24f-4c10-98b1-77b14d7fccfa&uuid=1a7afa96c270429ea63c7eb3db928834").json()
+# print(listOfNbtToJson(decode_data(profiles['profiles'][1]['members']['1a7afa96c270429ea63c7eb3db928834']['inv_contents']['data']))[0][0].keys())
+for j in range(36):
+  slotData = listOfNbtToJson(decode_data(profiles['profiles'][1]['members']['1a7afa96c270429ea63c7eb3db928834']['inv_contents']['data']))[0][j]
+  if slotData != {}:
+    if slotData['id'] == 397:
+      if 'tag' in slotData:
+        #skyblockId
+        if 'ExtraAttributes' in slotData['tag'] and 'id' in slotData['tag']['ExtraAttributes']:
+            skyblockId = str(slotData['tag']['ExtraAttributes']['id'])
+        else:
+            skyblockId = None
+      print(str(j) + " <-Yes->" + str(slotData['id']) + ":")
+      print(slotData.keys())
+      print(str(skyblockId)+"\n")
+    else:
+      print(str(j) + " <-No->" + str(slotData['id']))
