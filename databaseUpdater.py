@@ -10,19 +10,25 @@ import base64
 import os
 from random import randint
 global mydb
+def writeJson(fileName, data):
+  with open(fileName, 'w') as userWriteData:
+    json.dump(data, userWriteData)
+def readJson(fileName):
+  with open(fileName, 'r') as userReadData:
+    return(json.load(userReadData))
+def getConfig():
+  global config
+  config = readJson("config.json")
+getConfig()
 mydb = mysql.connector.connect(
-  host="192.168.1.104",
-  user="root",
-  password="CURSE OF BINDING",
-  database="skyblockUsers"
+  host=config['databaseHost'],
+  user=config['databaseUser'],
+  password=config['databasePassword'],
+  database=config['databaseName']
 )
 def decode_data(compressed):
-  # b = time.time()
   iobite = io.BytesIO(base64.b64decode(compressed))
-  # c = time.time()
   uncompressed = nbt.nbt.NBTFile(fileobj = iobite)
-  # d = time.time()
-  # print(" iobytes: " + str(c-b) + " nbt: " + str(d-c))
   return(uncompressed)
 def encodeJsonData(uncompressed):
   # Convert to JSON
@@ -41,15 +47,7 @@ def decodeJsonData(compressed):
   #json
   jsonData = json.loads(uncompressed)
   return(jsonData)
-def writeJson(fileName, data):
-  with open(fileName, 'w') as userWriteData:
-    json.dump(data, userWriteData)
-def readJson(fileName):
-  with open(fileName, 'r') as userReadData:
-    return(json.load(userReadData))
-def getConfig():
-  global config
-  config = readJson("config.json")
+
 
 def tagValueToJson(data):
   if type(data) in [nbt.nbt.TAG_Byte,nbt.nbt.TAG_Short,nbt.nbt.TAG_Int,nbt.nbt.TAG_Long]:
@@ -111,32 +109,16 @@ def addProfileUserRow(mycursor,i, profiles, uuid):
   else:
     members = str(list(profiles['profiles'][i]['members'].keys())[0:50]).replace("\'","").replace("[","").replace("]","").replace(" ","")
     notes += "Over 50 members. "
-  # dungeon_teammate
-  # if 'dungeons' in profiles['profiles'][i]['members'][uuid] and 'dungeon_types' in profiles['profiles'][i]['members'][uuid]['dungeons']:
-  #   dungeon_teammates = []
-  #   dungeon_types = list(profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'].keys())
-  #   for o in range(len(dungeon_types)):
-  #     if 'best_runs' in profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]:
-  #       for j in profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]['best_runs']:
-  #         profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]['best_runs'][j]
-  #         for q in range(len(profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]['best_runs'][j])):
-  #           if 'teammates' in profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]['best_runs'][j][q]:
-  #             for p in range(len(profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]['best_runs'][j][q]['teammates'])):
-  #               if profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]['best_runs'][j][q]['teammates'][p] not in dungeon_teammates and profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]['best_runs'][j][q]['teammates'][p] != '':
-  #                 dungeon_teammates.append(profiles['profiles'][i]['members'][uuid]['dungeons']['dungeon_types'][dungeon_types[o]]['best_runs'][j][q]['teammates'][p])
-  #   dungeon_teammates = str(dungeon_teammates).replace("\'","").replace("[","").replace("]","").replace(" ","")
-  # else:
-  #   dungeon_teammates = None
   #coin_purse
   if 'coin_purse' in profiles['profiles'][i]['members'][uuid]:
     coin_purse = int(profiles['profiles'][i]['members'][uuid]['coin_purse'])
   else:
-    coin_purse = 0 
+    coin_purse = None 
   #banking
-  if 'banking' in profiles['profiles'][i]['members'][uuid]:
-    bank = int(profiles['profiles'][i]['members'][uuid]['banking']['balance'])
+  if 'banking' in profiles['profiles'][i]:
+    bank = int(profiles['profiles'][i]['banking']['balance'])
   else:
-    bank = 0
+    bank = None
   # inv_armor
   if 'inv_armor' in profiles['profiles'][i]['members'][uuid]:
     inv_armor = decode_data(profiles['profiles'][i]['members'][uuid]['inv_armor']['data'])
@@ -188,27 +170,24 @@ def addProfileUserRow(mycursor,i, profiles, uuid):
     pets = str(encodeJsonData(profiles['profiles'][i]['members'][uuid]['pets']))[2:-1]
   else:
     pets = None
-  #inserting row
-  # print(f"`{profile_id}`, `{uuid}`, `{members}`, `{dungeon_teammates}`, {coin_purse}, {bank}, `{inv_armor}`, `{ender_chest_contents}`, `{wardrobe_contents}`, `{personal_vault_contents}`, `{inv_contents}`, `{backpack_contents}`, `{first_join}`, `{last_save}`, `{notes}`, `{pets_content}`")
   if coin_purse < 50000 and bank == 0 and inv_armor == None and ender_chest_contents == None and wardrobe_contents == None and personal_vault_contents == None and inv_contents == None and backpack_contents == None:
     pass
   else:
     sql_command = "INSERT INTO tempNames(profile_id, player_id) VALUES('%s','%s')" % (profile_id, uuid)
     mycursor.execute(sql_command)
-    # # sql_command = "INSERT INTO sbData0921(profile_id, player_id, members, dungeon_teammates, coin_purse, bank, inv_armor, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, first_join, last_save, notes, pets_contents) VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s', '%s')" % (profile_id, uuid, members, dungeon_teammates, coin_purse, bank, inv_armor, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, first_join, last_save, notes, pets)
-    sql_command = "INSERT INTO sbData0921(profile_id, player_id, members, coin_purse, bank, inv_armor, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, first_join, last_save, notes, pets_contents) VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s', '%s')" % (profile_id, uuid, members, coin_purse, bank, inv_armor, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, first_join, last_save, notes, pets)
+    sql_command = "INSERT INTO sbDataTest(profile_id, player_id, profile_members, dungeon_teammates, coin_purse,  bank, inv_armor_contents, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, pets_contents, first_join, last_save, month_indexed) VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s', '%s')" % (profile_id, uuid, members, None, coin_purse, bank, inv_armor, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, pets, first_join, last_save, config["monthIndexed"])
     mycursor.execute(sql_command)
     mydb.commit()
     adds += 1
 
 def remakeTable():
   global mydb
-  mycursor = mydb.cursor() 
-  mycursor.execute("DROP TABLE sbData0921")
+  mycursor = mydb.cursor()
+  mycursor.execute("DROP TABLE sbDataTest")
   mycursor.execute("DROP TABLE tempNames")
   mycursor.execute("CREATE TABLE tempNames(id INT(8), profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36))")
-  # mycursor.execute("CREATE TABLE sbData0921(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL, members MEDIUMTEXT, dungeon_teammates MEDIUMTEXT, coin_purse BIGINT(20),  bank BIGINT(20), inv_armor MEDIUMTEXT, ender_chest_contents MEDIUMTEXT, wardrobe_contents MEDIUMTEXT, personal_vault_contents MEDIUMTEXT, inv_contents MEDIUMTEXT, backpack_contents MEDIUMTEXT, first_join INT(255), last_save INT(255), notes VARCHAR(2500), pets_contents MEDIUMTEXT)")
-  mycursor.execute("CREATE TABLE sbData0921(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL, members MEDIUMTEXT, coin_purse BIGINT(20),  bank BIGINT(20), inv_armor MEDIUMTEXT, ender_chest_contents MEDIUMTEXT, wardrobe_contents MEDIUMTEXT, personal_vault_contents MEDIUMTEXT, inv_contents MEDIUMTEXT, backpack_contents MEDIUMTEXT, first_join INT(255), last_save INT(255), notes VARCHAR(2500), pets_contents MEDIUMTEXT)")
+  mycursor.execute("CREATE TABLE sbDataTest(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL, profile_members MEDIUMTEXT, dungeon_teammates MEDIUMTEXT, coin_purse BIGINT(20),  bank BIGINT(20), inv_armor_contents MEDIUMTEXT, ender_chest_contents MEDIUMTEXT, wardrobe_contents MEDIUMTEXT, personal_vault_contents MEDIUMTEXT, inv_contents MEDIUMTEXT, backpack_contents MEDIUMTEXT, pets_contents MEDIUMTEXT, first_join INT(255), last_save INT(255), month_indexed text(20))")
+
 def wipeTable():
   global mydb
   mycursor = mydb.cursor()
@@ -220,9 +199,6 @@ def addUser(uuid):
   global adds
   global config
   global mydb
-  # try:
-  # try:
-  # a = time.time()
   profilesStr = requests.get("https://api.hypixel.net/skyblock/profiles?key=" + config["apiKey"] + "&uuid="+uuid)
   try:
     profiles = profilesStr.json()
@@ -230,36 +206,23 @@ def addUser(uuid):
     print("https://api.hypixel.net/skyblock/profiles?key=<API_KEY_PLACEHOLDER>" + "&uuid="+uuid)
     print(str(profilesStr))
     return()
-  # except:
-  #   errors.append(uuid)
-  #   print("hi")
-  #   print()
-  #   return()
-  # b = time.time()
   if profiles['success'] == True and "profiles" in profiles and profiles["profiles"] != None:
-    # c = time.time()
     mycursor = mydb.cursor()
     mycursor.execute(f"SELECT profile_id FROM tempNames WHERE player_id = '{uuid}'")
     result = list(mycursor.fetchall())
-    # d = time.time()
     existingProfiles = []
-    # processingTimes = []
     for j in range(len(result)):
       existingProfiles.append(str(result[j][0]))
     for i in range(len(profiles['profiles'])):
-      # f = time.time()
       if profiles['profiles'][i]['profile_id'] not in existingProfiles and uuid in profiles['profiles'][i]['members'] and 'last_save' in profiles['profiles'][i]['members'][uuid]:
         if 1601510401000 < int(profiles['profiles'][i]['members'][uuid]['last_save']):
           addProfileUserRow(mydb.cursor(),i, profiles, uuid)
-      # g = time.time()
-      # processingTimes.append(str(g-f))
-    # print("api time: " + str(b-a) + "s, db time: " + str(d-c) + "s processing times " + str(processingTimes))
 def scanToDb():
   global adds
   global errors
   global config
   global mydb
-  # remakeTable()#remove
+
   adds = 0
   errors = []
   startName = str(input("Enter start name index: "))
@@ -279,9 +242,7 @@ def scanToDb():
     startTime = time.time()
     mycursor.execute("SELECT player_id FROM namesList WHERE `id` = %i" % (i))
     uuid = mycursor.fetchall()[0][0]
-    # print(uuid, "start")#remove
     addUser(uuid)
-    # print(uuid, "end")#remove
     endTime = time.time()
     # api cooldown
     totalTime += endTime-startTime
@@ -316,8 +277,8 @@ elif question == 2:
     question = int(input("enter num to confirm again: " + str(num)))
     if question == num:
       if question == num:
-        question = str(input("Are you really sure? enter code: "))
-        if question == "confirm hostname":
+        question = str(input("Are you really sure you want to wipe the database? y/n: "))
+        if question == "y":
           remakeTable()
         else:
           print("False")
@@ -327,6 +288,3 @@ elif question == 2:
       print("False")
 else:
   print("error, not option")
-# uuid = "1a7afa96c270429ea63c7eb3db928834".replace("-","")
-# addUser(mydb, uuid)
-# wipeTable(mydb)

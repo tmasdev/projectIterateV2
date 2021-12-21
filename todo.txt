@@ -1,6 +1,27 @@
-vary interval between printing user number in config: ("5000 in example -> "if userNumber%5000 == 0")
+- create new databaseUpdate.py program to write new data directly to combined db:
+    - should auto update month
+    - auto scan monthly on mac mini
+- Import user's code for item filter
+- Auto detect if db exists before creating one
+- Use multiple api keys
+- Create init.py file, to create all needed DB's (if dont exist)
+- Create new project folder
 
-Create number recognition neural network+trainer in python (mostly pure)
-learn what a weighted sum is
+- create simple sb coins exchange rates calculator, using booster cookie bz api and exchange rates code I made for TIME 'challenges'
 
-How biological neurons learn(i think): hebbian thoery
+Move all hypixel api projects to single stack with cl-ui:
+    - projectIterateV2: 
+        - databaseSearch
+        - databaseUpdate
+    - ahReforgelessDungeonDrops
+    - auctionHouseExotics
+    - greatSpookEdition
+    - boosterCookieExchangeRates
+
+Do Final code optimisation on all project
+Fully comment/annotate each code file
+Create readme.txt explanation of each project
+
+Release on github as 'hypixel tools'
+
+Quit hypixel skyblock permenantly

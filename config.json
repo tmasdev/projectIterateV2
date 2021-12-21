@@ -1,4 +1,11 @@
 {"apiCooldown":0.5,
     "apiKey":"d16dc479-a24f-4c10-98b1-77b14d7fccfa",
-    "exoticSearch":true
+    "exoticSearch":true,
+    "databaseHost":"169.254.221.221",
+    "databasePort":3306,
+    "databaseUser":"root",
+    "databasePassword":"CURSE OF BINDING",
+    "databaseName":"skyblockUsers",
+    "updateProgressInteval":5000,
+    "monthIndexed":"09/21"
 }
