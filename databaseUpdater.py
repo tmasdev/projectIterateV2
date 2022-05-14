@@ -113,12 +113,12 @@ def addProfileUserRow(mycursor,i, profiles, uuid):
   if 'coin_purse' in profiles['profiles'][i]['members'][uuid]:
     coin_purse = int(profiles['profiles'][i]['members'][uuid]['coin_purse'])
   else:
-    coin_purse = None 
+    coin_purse = 0
   #banking
   if 'banking' in profiles['profiles'][i]:
     bank = int(profiles['profiles'][i]['banking']['balance'])
   else:
-    bank = None
+    bank = 0
   # inv_armor
   if 'inv_armor' in profiles['profiles'][i]['members'][uuid]:
     inv_armor = decode_data(profiles['profiles'][i]['members'][uuid]['inv_armor']['data'])
@@ -173,26 +173,36 @@ def addProfileUserRow(mycursor,i, profiles, uuid):
   if coin_purse < 50000 and bank == 0 and inv_armor == None and ender_chest_contents == None and wardrobe_contents == None and personal_vault_contents == None and inv_contents == None and backpack_contents == None:
     pass
   else:
-    sql_command = "INSERT INTO tempNames(profile_id, player_id) VALUES('%s','%s')" % (profile_id, uuid)
-    mycursor.execute(sql_command)
-    sql_command = "INSERT INTO sbDataTest(profile_id, player_id, profile_members, dungeon_teammates, coin_purse,  bank, inv_armor_contents, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, pets_contents, first_join, last_save, month_indexed) VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s', '%s')" % (profile_id, uuid, members, None, coin_purse, bank, inv_armor, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, pets, first_join, last_save, config["monthIndexed"])
-    mycursor.execute(sql_command)
-    mydb.commit()
-    adds += 1
+    try:
+      sql_command = "INSERT INTO tempNames(profile_id, player_id) VALUES('%s','%s')" % (profile_id, uuid)
+      mycursor.execute(sql_command)
+      sql_command = "INSERT INTO sbData" + str(config['monthIndexed']) + "(profile_id, player_id, profile_members, dungeon_teammates, coin_purse,  bank, inv_armor_contents, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, pets_contents, first_join, last_save, month_indexed) VALUES('%s','%s','%s','%s',%s,%s,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" % (profile_id, uuid, members, None, coin_purse, bank, inv_armor, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, pets, first_join, last_save, config["monthIndexed"])
+      mycursor.execute(sql_command)
+      mydb.commit()
+      adds += 1
+    except:
+      print((profile_id, uuid, members, None, coin_purse, bank, inv_armor, ender_chest_contents, wardrobe_contents, personal_vault_contents, inv_contents, backpack_contents, pets, first_join, last_save, config["monthIndexed"]))
 
 def remakeTable():
   global mydb
   mycursor = mydb.cursor()
-  mycursor.execute("DROP TABLE sbDataTest")
-  mycursor.execute("DROP TABLE tempNames")
+  mycursor.execute("SHOW TABLES LIKE \'sbData" + str(config['monthIndexed']) + "\'")
+  if len(mycursor.fetchall()) > 0:
+    mycursor.execute("DROP TABLE sbData" + str(config['monthIndexed']))
+  mycursor.execute("SHOW TABLES LIKE \'tempNames\'")
+  if len(mycursor.fetchall()) > 0:
+    mycursor.execute("DROP TABLE tempNames")
   mycursor.execute("CREATE TABLE tempNames(id INT(8), profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36))")
-  mycursor.execute("CREATE TABLE sbDataTest(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL, profile_members MEDIUMTEXT, dungeon_teammates MEDIUMTEXT, coin_purse BIGINT(20),  bank BIGINT(20), inv_armor_contents MEDIUMTEXT, ender_chest_contents MEDIUMTEXT, wardrobe_contents MEDIUMTEXT, personal_vault_contents MEDIUMTEXT, inv_contents MEDIUMTEXT, backpack_contents MEDIUMTEXT, pets_contents MEDIUMTEXT, first_join INT(255), last_save INT(255), month_indexed text(20))")
+  mycursor.execute("CREATE TABLE sbData" + str(config['monthIndexed']) + "(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL, profile_members MEDIUMTEXT, dungeon_teammates MEDIUMTEXT, coin_purse BIGINT(20),  bank BIGINT(20), inv_armor_contents MEDIUMTEXT, ender_chest_contents MEDIUMTEXT, wardrobe_contents MEDIUMTEXT, personal_vault_contents MEDIUMTEXT, inv_contents MEDIUMTEXT, backpack_contents MEDIUMTEXT, pets_contents MEDIUMTEXT, first_join INT(255), last_save INT(255), month_indexed text(20))")
 
-def wipeTable():
+def autoFixTables():
   global mydb
   mycursor = mydb.cursor()
-  mycursor.execute("DELETE FROM sbData0921 WHERE TRUE")
-  mydb.commit()
+  if len(mycursor.fetchall()) == 0:
+    mycursor.execute("CREATE TABLE sbData" + str(config['monthIndexed']) + "(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL, profile_members MEDIUMTEXT, dungeon_teammates MEDIUMTEXT, coin_purse BIGINT(20),  bank BIGINT(20), inv_armor_contents MEDIUMTEXT, ender_chest_contents MEDIUMTEXT, wardrobe_contents MEDIUMTEXT, personal_vault_contents MEDIUMTEXT, inv_contents MEDIUMTEXT, backpack_contents MEDIUMTEXT, pets_contents MEDIUMTEXT, first_join INT(255), last_save INT(255), month_indexed text(20))")
+  mycursor.execute("SHOW TABLES LIKE \'tempNames\'")
+  if len(mycursor.fetchall()) == 0:
+    mycursor.execute("CREATE TABLE tempNames(id INT(8), profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36))")
 
 def addUser(uuid):
   global errors
@@ -258,7 +268,7 @@ def scanToDb():
       print("Actual average time " + str(round(totalTimePredict/totalCompletedNames, 3)))
       print(str(adds) + " new names/rows in code")
       mycursor = mydb.cursor()
-      mycursor.execute("SELECT COUNT(*) FROM sbData0921")
+      mycursor.execute("SELECT COUNT(*) FROM sbData" + str(config['monthIndexed']))
       result = mycursor.fetchall()
       print(str(result) + " names/rows in db")
       print(str(len(errors)) + " errors")
@@ -268,23 +278,19 @@ def scanToDb():
       
 question = int(input("Add to/wipe db? 1/2: "))
 if question == 1:
+  autoFixTables()
   scanToDb()
 elif question == 2:
   num = randint(0,1000000)
-  question = int(input("enter num to confirm: " + str(num)))
+  question = int(input("enter num to confirm: " + str(num) + " --> "))
   if question == num:
-    num = randint(0,1000000)
-    question = int(input("enter num to confirm again: " + str(num)))
-    if question == num:
-      if question == num:
-        question = str(input("Are you really sure you want to wipe the database? y/n: "))
-        if question == "y":
-          remakeTable()
-        else:
-          print("False")
-      else:
-        print("False")
+    question = str(input("Are you really sure you want to wipe the database? y/n: "))
+    if question == "y":
+      remakeTable()
     else:
       print("False")
+  else:
+    print("False")
 else:
   print("error, not option")
+ # Last updated 14/5/22

@@ -10,7 +10,7 @@
 - create simple sb coins exchange rates calculator, using booster cookie bz api and exchange rates code I made for TIME 'challenges'
 
 Move all hypixel api projects to single stack with cl-ui:
-    - projectIterateV2: 
+    - projectIterateV2:
         - databaseSearch
         - databaseUpdate
     - ahReforgelessDungeonDrops

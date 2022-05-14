@@ -151,7 +151,7 @@ def filterSlot(slotData,location):
         #Dungeon Splash
         if "Dungeon" in itemName and "Splash Potion" in itemName:
             mycursor = mydb.cursor()
-            sql_command = "INSERT INTO foundItems(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), skyblockId, itemName,location)
+            sql_command = "INSERT INTO foundItems" + str(config['monthIndexed']) + "(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), skyblockId, itemName,location)
             mycursor.execute(sql_command)
             mydb.commit()
     elif skyblockId == "PET":
@@ -342,15 +342,14 @@ def searchUser(userData):
         for pet in range(len(pets_contents)):
             filterPetSlot(pets_contents[pet], location, month_indexed)
 def remakeTable(mycursor):
-    mycursor.execute("SHOW TABLES")
-    results = mycursor.fetchall()
-    results_list = [item[0] for item in results] # Conversion to list of str
-    if 'exoticProfiles' in results_list:
-        mycursor.execute("DROP TABLE exoticProfiles")
-    if 'exoticProfiles' in results_list:
-        mycursor.execute("DROP TABLE foundItems")
-    mycursor.execute("CREATE TABLE exoticProfiles(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL,item_id VARCHAR(64),item_color VARCHAR(8), item_location VARCHAR(64), month_indexed text(20))")
-    mycursor.execute("CREATE TABLE foundItems(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL,item_id VARCHAR(64),item VARCHAR(256), item_location VARCHAR(64), month_indexed text(20))")
+    mycursor.execute("SHOW TABLES LIKE \'exoticProfiles" + str(config['monthIndexed']) + "\'")
+    if len(mycursor.fetchall()) > 0:
+        mycursor.execute("DROP TABLE exoticProfiles" + str(config['monthIndexed']))
+    mycursor.execute("SHOW TABLES LIKE \'foundItems" + str(config['monthIndexed']) + "\'")
+    if len(mycursor.fetchall()) > 0:
+        mycursor.execute("DROP TABLE foundItems" + str(config['monthIndexed']))
+    mycursor.execute("CREATE TABLE exoticProfiles" + str(config['monthIndexed']) + "(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL,item_id VARCHAR(64),item_color VARCHAR(8), item_location VARCHAR(64), month_indexed text(20))")
+    mycursor.execute("CREATE TABLE foundItems" + str(config['monthIndexed']) + "(id INT(8) UNSIGNED AUTO_INCREMENT PRIMARY KEY, profile_id VARCHAR(36) NOT NULL, player_id VARCHAR(36) NOT NULL,item_id VARCHAR(64),item VARCHAR(256), item_location VARCHAR(64), month_indexed text(20))")
     
 def searchDb(index):
     global exoticSearch
@@ -374,13 +373,16 @@ def searchDb(index):
         user=config['databaseUser'],
         password=config['databasePassword'],
         database=config['databaseName'],
-        port=config["databasePort"]
     )
     print("connected")
     mycursor = mydb.cursor()
     remakeTable(mycursor)
-    mycursor.execute("SELECT MAX(`id`) FROM sbData")
-    userCount = int(mycursor.fetchall()[0][0])
+    mycursor.execute("SELECT MAX(`id`) FROM sbData"+str(config['monthIndexed']))
+    maxIds = mycursor.fetchall()[0][0]
+    if maxIds == None:
+        print("Error: no player data in database table.")
+        exit()
+    userCount = int(maxIds)
     print(userCount)
     totalDbTime = 0
     times = 0
@@ -392,7 +394,7 @@ def searchDb(index):
     timesOfTotalNewNamesTime = 0
     while userNumber in range(userCount):
         a = time.time()
-        mycursor.execute("SELECT * FROM sbData WHERE `id` = %i" % (userNumber))
+        mycursor.execute("SELECT * FROM sbData" + str(config['monthIndexed']) + " WHERE `id` = %i" % (userNumber))
         userData = mycursor.fetchall()
         b = time.time()
         totalDbTime += b-a
@@ -415,4 +417,4 @@ def searchDb(index):
 
 print("Start")
 searchDb(0)
- # Last updated 02/11/21
+ # Last updated 14/5/22
