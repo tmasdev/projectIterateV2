@@ -227,6 +227,7 @@ def addUser(uuid):
       if profiles['profiles'][i]['profile_id'] not in existingProfiles and uuid in profiles['profiles'][i]['members'] and 'last_save' in profiles['profiles'][i]['members'][uuid]:
         if 1601510401000 < int(profiles['profiles'][i]['members'][uuid]['last_save']):
           addProfileUserRow(mydb.cursor(),i, profiles, uuid)
+
 def scanToDb():
   global adds
   global errors

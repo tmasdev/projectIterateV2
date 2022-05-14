@@ -86,6 +86,13 @@ def autoSaveLocation(index):
 def autoLoadIndex():
     return(readJson("autoSaveIndex.json")[0])
 
+def saveItem(str(profileId), str(playerid), skyblockId, itemName,location):
+    global mydb
+    mycursor = mydb.cursor()
+    sql_command = "INSERT INTO foundItems" + str(config['monthIndexed']) + "(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), skyblockId, itemName,location)
+    mycursor.execute(sql_command)
+    mydb.commit()
+
 def filterSlot(slotData,location):
     global mydb
     global config
@@ -144,16 +151,14 @@ def filterSlot(slotData,location):
     #itemLore : The item's lore
     #itemName :The displayed name of the item: [lvl 1] Enderman
     #itemSlotCount :How many of the item are in the slot: 1-64
-
+    #saveItem(str(profileId), str(playerid), skyblockId, itemName,location): saves item to database 
+    
     #Start code block
 
     if skyblockId == "POTION":
         #Dungeon Splash
         if "Dungeon" in itemName and "Splash Potion" in itemName:
-            mycursor = mydb.cursor()
-            sql_command = "INSERT INTO foundItems" + str(config['monthIndexed']) + "(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), skyblockId, itemName,location)
-            mycursor.execute(sql_command)
-            mydb.commit()
+            saveItem(str(profileId), str(playerid), skyblockId, itemName,location)
     elif skyblockId == "PET":
         if 'tag' in slotData:
             if 'ExtraAttributes' in slotData['tag']:
@@ -165,10 +170,7 @@ def filterSlot(slotData,location):
                     if 'originTag' in slotData['tag']['ExtraAttributes']:
                         if slotData['tag']['ExtraAttributes']['originTag'] == 'UNKNOWN':
                             print("Unknown pet : " + str(playerid) + " : " + str(location))
-                            mycursor = mydb.cursor()
-                            sql_command = "INSERT INTO foundItems(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), "PET", "unknown_pet",location)
-                            mycursor.execute(sql_command)
-                            mydb.commit()
+                            saveItem(str(profileId), str(playerid), "PET", "unknown_pet",location)
                         else:
                             print("Not \'originTag\' == \'UNKNOWN\' ")
                             print(str(playerid) + " : " + str(location) + " : " + str(slotData) + "\n")
