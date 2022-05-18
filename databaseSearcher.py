@@ -86,7 +86,7 @@ def autoSaveLocation(index):
 def autoLoadIndex():
     return(readJson("autoSaveIndex.json")[0])
 
-def saveItem(str(profileId), str(playerid), skyblockId, itemName,location):
+def saveItem(profileId, playerid, skyblockId, itemName,location):
     global mydb
     mycursor = mydb.cursor()
     sql_command = "INSERT INTO foundItems" + str(config['monthIndexed']) + "(profile_id, player_id, item_id, item, item_location) VALUES('%s','%s','%s','%s','%s')" % (str(profileId), str(playerid), skyblockId, itemName,location)
