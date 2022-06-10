@@ -9,6 +9,7 @@ import gzip
 import base64
 import io
 import os
+import csv
 global mydb
 print("start")
 def writeJson(fileName, data):
@@ -29,3 +30,6 @@ mydb = mysql.connector.connect(
     port=config["databasePort"]
 )
 print("connected")
+mycursor = mydb.cursor()
+sql_command = "CREATE TABLE nameslist(player_id VARCHAR(36) NOT NULL, id INT(8) NOT NULL, PRIMARY KEY (id))"
+mycursor.execute(sql_command)
