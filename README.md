@@ -1,4 +1,4 @@
-[Deprecated]
+[Deprecated]\n
 Project Iterate V2 was a project that scanned Hypixel Skyblock player inventories, for rare glitched items and exotic armours.
 For context there was a small community (blobtopia, oats mafia, etc) who's only aim in skyblock was to search for glitches and bugs in order to collect rare glitched items (and dupe/irl trade coins, though I never did that).
 
